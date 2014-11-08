@@ -1,10 +1,6 @@
 #include <ucontext.h>
 #include <signal.h>
 
-#define MAX_THREADS 100
-#define MAX_SEMAPHORES 100
-#define THREAD_NAME_LEN 128
-
 #define error_msg(msg) \
   { perror(msg); exit(EXIT_FAILURE); }
 
@@ -18,10 +14,10 @@ namespace mythreads {
 
   typedef struct _mythread_control_block {
     ucontext_t context;
-    //char thread_name[THREAD_NAME_LEN];
     char* thread_name;
     int thread_id;
     ThreadState state;
+    // time on cpu
   } mythread_control_block;
 
   typedef struct _semaphore_control_block {
@@ -39,4 +35,5 @@ namespace mythreads {
   void semaphore_signal(int semaphore);
   void destroy_semaphore(int semaphore);
   void mythread_state();
+  void rrScheduler();
 }
