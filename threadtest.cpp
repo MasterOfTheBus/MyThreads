@@ -1,10 +1,14 @@
-#include "mythread.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "mythread.hpp"
+
+using namespace mythreads;
 
 void testthread() {
   printf("a");
 }
 
-void main() {
+int main() {
   mythread_init();
 
 }
