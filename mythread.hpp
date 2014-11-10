@@ -13,7 +13,7 @@ namespace mythreads {
   } ThreadState;
 
   typedef struct _mythread_control_block {
-    ucontext_t context;
+    ucontext_t* context;
     char* thread_name;
     int thread_id;
     ThreadState state;
