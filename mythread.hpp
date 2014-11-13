@@ -1,5 +1,9 @@
 #include <ucontext.h>
 #include <signal.h>
+#include <queue>
+
+#define DEFAULT_SEC 0
+#define DEFAULT_USEC 1000 // microseconds
 
 #define error_msg(msg) \
   { perror(msg); exit(EXIT_FAILURE); }
@@ -8,6 +12,7 @@ namespace mythreads {
   typedef enum {
     RUNNABLE,
     RUNNING,
+    WAIT,
     BLOCKED,
     EXIT
   } ThreadState;
@@ -22,7 +27,9 @@ namespace mythreads {
 
   typedef struct _semaphore_control_block {
     int id;
+    int value;
     int count;
+    std::queue<int> waiting_threads;
   } semaphore_control_block;
 
   int mythread_init();
@@ -34,6 +41,8 @@ namespace mythreads {
   void semaphore_wait(int semaphore);
   void semaphore_signal(int semaphore);
   void destroy_semaphore(int semaphore);
+  char* stateString(ThreadState state);
   void mythread_state();
   void rrScheduler();
+  void printQueue();
 }
