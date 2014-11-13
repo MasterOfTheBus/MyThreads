@@ -3,7 +3,8 @@
 #include <queue>
 
 #define DEFAULT_SEC 0
-#define DEFAULT_USEC 1000 // microseconds
+#define DEFAULT_USEC 500 // microseconds
+#define MIN_INTERVAL 0
 
 #define error_msg(msg) \
   { perror(msg); exit(EXIT_FAILURE); }

@@ -24,20 +24,20 @@ namespace mythreads {
   sigset_t sset, oldset;
 
   void pauseTimer() {
-#if 0
+#if 1
     struct itimerval pauseVal = { 0 };
     setitimer(ITIMER_REAL, &pauseVal, &tval);
 #endif
-#if 1
+#if 0
     sigprocmask(SIG_BLOCK, &sset, &oldset);
 #endif
   }
 
   void resumeTimer() {
-#if 0
+#if 1
     setitimer(ITIMER_REAL, &tval, 0);
 #endif
-#if 1
+#if 0
     sigprocmask(SIG_SETMASK, &oldset, 0);
 #endif
   }
@@ -49,15 +49,17 @@ namespace mythreads {
     while (!runqueue.empty()) {
       // pause the timer to make sure this section won't be interrupted
       pauseTimer();
+      /*
       printf("==========searching for active thread\n");
       printQueue();
+      */
       // check if a thread has exited and remove it from the queue
       int id = runqueue.front();
       while ((threadTable[id].state == EXIT) && (!runqueue.empty())) {
 	runqueue.pop();
 	id = runqueue.front();
       }
-      printQueue();
+      //printQueue();
       if (runqueue.empty()) {
         currentThread == MAIN_THREAD;
 	return;
@@ -66,7 +68,7 @@ namespace mythreads {
       runqueue.pop();
       runqueue.push(id);
       id = runqueue.front();
-      printf("==========found an active thread\n");
+      //printf("==========found an active thread\n");
       ucontext_t *uct = contextTable[id];
       threadTable[id].state = RUNNING;
 #if 0
@@ -76,7 +78,7 @@ namespace mythreads {
       threadTable[currentThread].state == RUNNABLE;
       currentThread = id;
 
-      printf("id: %d\n\n===============swapping context\n", id);
+      //printf("id: %d\n\n===============swapping context\n", id);
       resumeTimer();
       if (swapcontext(&uctx_sched, uct) == -1) {
         error_msg("swapcontext");
@@ -169,8 +171,8 @@ namespace mythreads {
     controlBlock.context = uct;
     threadTable[controlBlock.thread_id] = controlBlock;
     runqueue.push(controlBlock.thread_id);
-    printf("size: %d\n", runqueue.size());
-    printf("back: %d\n", runqueue.back());
+    //printf("size: %d\n", runqueue.size());
+    //printf("back: %d\n", runqueue.back());
 
     return (controlBlock.thread_id);
   }
@@ -211,6 +213,10 @@ namespace mythreads {
    * quantum is in microseconds
    */
   void set_quantum_size(int quantum) {
+    if (quantum <= MIN_INTERVAL) {
+      printf("Quantum size must be greater than 0\n");
+      exit(1);
+    }
     quantum_sec = (quantum > 100000) ? quantum / 100000 : 0;
     quantum_usec =(quantum > 100000) ? quantum % 100000 : quantum;
     tval.it_interval.tv_sec = quantum_sec;
