@@ -88,7 +88,7 @@ namespace mythreads {
   // context switcher that the timer will call to save current context and switch to scheduler
   void swapToSched(int signum) {
     // get the current context, swap from that to the scheduler
-    printf("swapping contexts\n");
+    printf("swapping contexts=========================\n");
     if (swapcontext(contextTable[currentThread], &uctx_sched) == -1) {
       error_msg("swapcontext");
     }
@@ -127,9 +127,10 @@ namespace mythreads {
 #endif
 #if 1
     sigset(SIGALRM, swapToSched);
-    sigemptyset(&sset);
-    sigaddset(&sset, SIGALRM);
 #endif
+    sigemptyset(&sset);
+    sigemptyset(&oldset);
+    sigaddset(&sset, SIGALRM);
     tval.it_interval.tv_sec = quantum_sec;
     tval.it_interval.tv_usec = quantum_usec;
     tval.it_value.tv_sec = quantum_sec;
@@ -178,15 +179,6 @@ namespace mythreads {
     if (runqueue.empty()) {
       error_msg("no scheduled threads");
     }
-#if 0
-    printf("thread exit\n");
-    int id = runqueue.front();
-    printf("before dequeue\n");
-    printQueue();
-    runqueue.pop();
-    printf("after dequeue\n");
-    printQueue();
-#endif
     // free the thread stack here?
     //    free(block.context->uc_stack.ss_sp);
     printf("thread exiting\n\n");
@@ -200,8 +192,6 @@ namespace mythreads {
   }
 
   void runthreads() {
-    setitimer(ITIMER_REAL, &tval, 0);
-
     // swap context from main to a thread
     int id = runqueue.front();
     ucontext_t *uct = contextTable[id];
@@ -209,6 +199,8 @@ namespace mythreads {
     //runqueue.pop();
     //runqueue.push(id);
     currentThread = id;
+    
+    setitimer(ITIMER_REAL, &tval, 0);
 
     if (swapcontext(&uctx_main, uct) == -1) {
       error_msg("swapcontext");
@@ -221,6 +213,10 @@ namespace mythreads {
   void set_quantum_size(int quantum) {
     quantum_sec = (quantum > 100000) ? quantum / 100000 : 0;
     quantum_usec =(quantum > 100000) ? quantum % 100000 : quantum;
+    tval.it_interval.tv_sec = quantum_sec;
+    tval.it_interval.tv_usec = quantum_usec;
+    tval.it_value.tv_sec = quantum_sec;
+    tval.it_value.tv_usec = quantum_usec;
   }
 
   int create_semaphore(int value) {
@@ -231,6 +227,7 @@ namespace mythreads {
     queue<int> waitQ;
     sem_block.waiting_threads = waitQ;
     waitQueueTable[sem_block.id] = &waitQ;
+    semaphoreTable[sem_block.id] = sem_block;
     numSemaphores++;
     return (sem_block.id);
   }
@@ -238,6 +235,7 @@ namespace mythreads {
   void semaphore_wait(int semaphore) {
     pauseTimer();
     semaphoreTable[semaphore].count--;
+    //printf("count value: %d\n", semaphoreTable[semaphore].count);
     if (semaphoreTable[semaphore].count < 0) {
       semaphoreTable[semaphore].waiting_threads.push(currentThread);
       threadTable[currentThread].state = WAIT;
@@ -248,12 +246,15 @@ namespace mythreads {
       if (swapcontext(contextTable[currentThread], &uctx_sched) == -1) {
 	error_msg("swapcontext");
       }
+    } else {
+      resumeTimer();
     }
   }
 
   void semaphore_signal(int semaphore) {
     pauseTimer();
     semaphoreTable[semaphore].count++;
+    //printf("count value: %d\n", semaphoreTable[semaphore].count);
     if (semaphoreTable[semaphore].count <= 0) {
       int tid = semaphoreTable[semaphore].waiting_threads.front();
       runqueue.push(tid);
@@ -319,6 +320,22 @@ namespace mythreads {
       printf("queue empty\n");
     }
     printf("currentThread: %d\n", currentThread);
+  }
+
+  int semaphore_getvalue(int semaphore) {
+    return semaphoreTable[semaphore].count;
+  }
+
+  void printSem() {
+    if (semaphoreTable.empty()) {
+      printf("map empty\n");
+    } else {
+      map<int, semaphore_control_block>::iterator it = semaphoreTable.begin();
+      while (it != semaphoreTable.end()) {
+        printf("id: %d, value: %d, count: %d\n", it->second.id, it->second.value, it->second.count);
+	it++;
+      }
+    }
   }
 
 } // namespace mythreads

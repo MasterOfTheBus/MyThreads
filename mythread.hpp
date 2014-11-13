@@ -39,10 +39,12 @@ namespace mythreads {
   void set_quantum_size(int quantum);
   int create_semaphore(int value);
   void semaphore_wait(int semaphore);
+  int semaphore_getvalue(int semaphore);
   void semaphore_signal(int semaphore);
   void destroy_semaphore(int semaphore);
   char* stateString(ThreadState state);
   void mythread_state();
   void rrScheduler();
   void printQueue();
+  void printSem();
 }
