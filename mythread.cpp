@@ -45,7 +45,7 @@ namespace mythreads {
   /*
    * Round Robin Scheduler invoked everytime sigalrm passed
    */
-  void rrScheduler_sig(int signum) {
+  void rrScheduler() {
     while (!runqueue.empty()) {
       // pause the timer to make sure this section won't be interrupted
       pauseTimer();
@@ -308,13 +308,6 @@ namespace mythreads {
              it->second.thread_name, stateString(it->second.state), 0);
       it++;
     }
-  }
-
-  /*
-   * Wrapper to rrScehduler_sig
-   */
-  void rrScheduler() {
-    rrScheduler_sig(0);
   }
 
   void printQueue() {
